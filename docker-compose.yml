@@ -1,0 +1,146 @@
+services:
+
+  postgres:
+    image: debezium-postgres
+    container_name: postgres
+    environment:
+        POSTGRES_PASSWORD: postgres
+    command: postgres -c config_file=/home/config/postgres.conf
+    networks:
+      - lan-network
+    ports:
+        - 5432:5432
+    volumes:
+        - ./postgres.conf:/home/config/postgres.conf
+        - postgresdata:/var/lib/postgresql/data
+    healthcheck:
+        test: ['CMD-SHELL', 'pg_isready']
+        interval: 10s
+        timeout: 5s
+        retries: 10
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: ${DOCKER_REGISTRY-}docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+    ports:
+        - 9200:9200
+    networks:
+        - lan-network
+    volumes:
+        - elasticdata:/usr/share/elasticsearch/data
+    environment:
+        - discovery.type=single-node
+        - http.port=9200
+        - http.cors.enabled=true
+        - http.cors.allow-origin=http://grafana:3000,http://127.0.0.1:8081
+        - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+        - http.cors.allow-credentials=true
+        - bootstrap.memory_lock=true      
+        - xpack.monitoring.enabled=true
+        - xpack.security.enabled=false
+        - xpack.watcher.enabled=false
+        - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+    healthcheck:
+        interval: 20s
+        retries: 10
+        test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+  kafka:
+    image: confluentinc/cp-kafka
+    container_name: kafka
+    networks:
+      - lan-network
+    ports:
+        - 9092:9092
+    environment:
+        CLUSTER_ID: kafka-docker-cluster-1
+        KAFKA_NODE_ID: 1
+        KAFKA_BROKER_ID: 1
+        KAFKA_AUTO_CREATE_TOPICS: 'true'
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+        KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        KAFKA_PROCESS_ROLES: 'broker,controller'
+        KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+        KAFKA_LISTENERS: 'PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+        KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+        KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+        KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+        KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+    healthcheck:
+        test: echo srvr | nc kafka 9092 || exit 1
+        interval: 5s
+        retries: 10
+   
+  connect:
+    image: debezium-connect 
+    container_name: connect
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - lan-network
+    ports:
+      - 8083:8083
+    environment:
+        GROUP_ID: 1
+        CONFIG_STORAGE_TOPIC: my-connect-configs
+        OFFSET_STORAGE_TOPIC: my-connect-offsets
+        ADVERTISED_HOST_NAME: connect
+        ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092 
+        LISTENERS: PLAINTEXT://kafka:29092
+        BOOTSTRAP_SERVERS: kafka:29092
+        CONNECT_INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+        CONNECT_INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+
+  agregator:
+    container_name: agregator 
+    image: ${DOCKER_REGISTRY-}postgrestoelasticsearch-agregator
+    build:
+      context: ./agregator/.
+      dockerfile: Dockerfile
+    depends_on:
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy        
+    links:
+      - kafka
+      - elasticsearch
+    networks:
+      - lan-network
+    ports:
+      - 8081:8081
+
+  api:
+    container_name: api 
+    image: ${DOCKER_REGISTRY-}postgrestoelasticsearch-api
+    build:
+      context: ./api/.
+      dockerfile: Dockerfile
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    links:
+      - elasticsearch
+    networks:
+      - lan-network
+    ports:
+      - 8082:8082
+      
+volumes:
+  postgresdata:
+    external: true
+    name: postgresdata
+  elasticdata:
+    external: true
+    name: elasticdata
+
+networks:
+  lan-network:
+    driver: bridge

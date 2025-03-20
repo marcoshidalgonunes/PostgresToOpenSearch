@@ -1,0 +1,4 @@
+spring:
+  elasticsearch:
+    uris: elasticsearch:9200
+

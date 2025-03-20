@@ -1,0 +1,14 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: agregator-app
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
+  profiles: 
+    active: local
+opensearch:
+  host: 'localhost:9200'
+  scheme: 'http'
