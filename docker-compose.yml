@@ -19,31 +19,34 @@ services:
         timeout: 5s
         retries: 10
 
-  elasticsearch:
-    container_name: elasticsearch
-    image: ${DOCKER_REGISTRY-}docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+  opensearch:
+    image: opensearchproject/opensearch:latest
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - DISABLE_SECURITY_PLUGIN=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=C@r6Cam1M0e
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearchdata:/usr/share/opensearch/data
     ports:
         - 9200:9200
     networks:
-        - lan-network
-    volumes:
-        - elasticdata:/usr/share/elasticsearch/data
-    environment:
-        - discovery.type=single-node
-        - http.port=9200
-        - http.cors.enabled=true
-        - http.cors.allow-origin=http://grafana:3000,http://127.0.0.1:8081
-        - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
-        - http.cors.allow-credentials=true
-        - bootstrap.memory_lock=true      
-        - xpack.monitoring.enabled=true
-        - xpack.security.enabled=false
-        - xpack.watcher.enabled=false
-        - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+      - lan-network
     healthcheck:
-        interval: 20s
-        retries: 10
-        test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+      test: ["CMD-SHELL", "curl --silent --fail localhost:9200/_cluster/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   kafka:
     image: confluentinc/cp-kafka
@@ -100,18 +103,18 @@ services:
 
   agregator:
     container_name: agregator 
-    image: ${DOCKER_REGISTRY-}postgrestoelasticsearch-agregator
+    image: ${DOCKER_REGISTRY-}postgrestoopensearch-agregator
     build:
       context: ./agregator/.
       dockerfile: Dockerfile
     depends_on:
       kafka:
         condition: service_healthy
-      elasticsearch:
+      opensearch:
         condition: service_healthy        
     links:
       - kafka
-      - elasticsearch
+      - opensearch
     networks:
       - lan-network
     ports:
@@ -119,15 +122,15 @@ services:
 
   api:
     container_name: api 
-    image: ${DOCKER_REGISTRY-}postgrestoelasticsearch-api
+    image: ${DOCKER_REGISTRY-}postgrestoopensearch-api
     build:
       context: ./api/.
       dockerfile: Dockerfile
     depends_on:
-      elasticsearch:
+      opensearch:
         condition: service_healthy
     links:
-      - elasticsearch
+      - opensearch
     networks:
       - lan-network
     ports:
@@ -137,9 +140,9 @@ volumes:
   postgresdata:
     external: true
     name: postgresdata
-  elasticdata:
+  opensearchdata:
     external: true
-    name: elasticdata
+    name: opensearchdata
 
 networks:
   lan-network:

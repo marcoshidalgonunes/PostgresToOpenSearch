@@ -41,6 +41,16 @@
             "projectName": "api",
             "args": "",
             "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-AgregatorApplication<agregator>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.postgrestoopensearch.agregator.AgregatorApplication",
+            "projectName": "agregator",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
         }
     ]
 }

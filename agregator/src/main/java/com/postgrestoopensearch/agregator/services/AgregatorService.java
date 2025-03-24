@@ -21,19 +21,21 @@ public class AgregatorService {
     public Summary create() {
         Summary summary = new Summary(0, 0);
 
-        boostKafkaComponent.start();
+        if (researchBoostRepository.createIndex()) {
+            boostKafkaComponent.start();
 
-        try (KeyValueIterator<Integer, ResearchBoost> topics = boostKafkaComponent.getTopics()) {
-            topics.forEachRemaining(entry -> {
-                summary.setReadedTopics(summary.getReadedTopics() + 1);
-                if (!researchBoostRepository.findById(entry.key).isPresent()) {
-                    researchBoostRepository.save(entry.value);
-                    summary.setWrittenTopics(summary.getWrittenTopics() + 1);
-                }
-            });
+            try (KeyValueIterator<Integer, ResearchBoost> topics = boostKafkaComponent.getTopics()) {
+                topics.forEachRemaining(entry -> {
+                    summary.setReadedTopics(summary.getReadedTopics() + 1);
+                    if (!researchBoostRepository.findById(entry.key).isPresent()) {
+                        researchBoostRepository.save(entry.value);
+                        summary.setWrittenTopics(summary.getWrittenTopics() + 1);
+                    }
+                });
+            }
+    
+            boostKafkaComponent.stop();   
         }
-
-        boostKafkaComponent.stop();   
 
         return summary;
     }

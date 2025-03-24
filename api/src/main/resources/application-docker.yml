@@ -1,4 +1,3 @@
-spring:
-  elasticsearch:
-    uris: elasticsearch:9200
-
+opensearch:
+  host: 'opensearch:9200'
+  scheme: 'http'

@@ -8,6 +8,8 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.client.RequestOptions;
 import org.opensearch.client.RestHighLevelClient;
+import org.opensearch.client.indices.CreateIndexRequest;
+import org.opensearch.client.indices.GetIndexRequest;
 import org.opensearch.common.xcontent.XContentType;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.index.reindex.DeleteByQueryRequest;
@@ -26,26 +28,46 @@ import lombok.extern.slf4j.Slf4j;
 @Repository
 public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
 
+    private static final String INDEX_NAME = "boost";
+
     @Autowired
     private RestHighLevelClient client;
 
     @Autowired
     private ObjectMapper objectMapper;    
 
+    @Override
+    public boolean createIndex() {
+        try {
+            GetIndexRequest request = new GetIndexRequest(INDEX_NAME);
+            boolean exists = client.indices().exists(request, RequestOptions.DEFAULT);
+            if (!exists) {
+                CreateIndexRequest createIndexRequest = new CreateIndexRequest(INDEX_NAME);
+                client.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+                return true;
+            }
+        } catch (IOException e) {
+            log.error("Error creating index ", e);
+        }
+        return false;
+    }
+    
+    @Override
     public void deleteAll() {    
         try {
-            DeleteByQueryRequest request = new DeleteByQueryRequest("boost");
+            DeleteByQueryRequest request = new DeleteByQueryRequest(INDEX_NAME);
             request.setQuery(QueryBuilders.matchAllQuery());
             
             client.deleteByQuery(request, RequestOptions.DEFAULT);
         } catch (IOException e) {
-            log.error("Error deleting index ", e);
+            log.error("Error deleting boost index ", e);
         }
     }    
 
-        public Optional<ResearchBoost> findById(int studentId) {
+    @Override
+    public Optional<ResearchBoost> findById(int studentId) {
         try {
-            SearchRequest searchRequest = new SearchRequest("boost");
+            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
             SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
             sourceBuilder.query(QueryBuilders.termQuery("student_id", studentId));
             searchRequest.source(sourceBuilder);
@@ -57,7 +79,7 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
                 return Optional.of(boost);
             }
         } catch (IOException e) {
-            log.error("Error reading admission index ", e);
+            log.error("Error reading boost index ", e);
         }
         return Optional.empty();
     }
@@ -65,13 +87,12 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     @Override
     public void save(ResearchBoost researchBoost) {
         try {
-            IndexRequest indexRequest = new IndexRequest("boost")
-            .source(objectMapper.writeValueAsString(researchBoost), XContentType.JSON);
-        client.index(indexRequest, RequestOptions.DEFAULT);
+            IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
+                .source(objectMapper.writeValueAsString(researchBoost), XContentType.JSON);
+            client.index(indexRequest, RequestOptions.DEFAULT);
         } catch (Exception e) {
             log.error("Error saving boost index ", e);
         }
         
     }
-    
 }

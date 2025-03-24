@@ -3,9 +3,5 @@ server:
 spring:
   application:
     name: api-app
-  data:
-    elasticsearch:
-      repositories:
-        enabled: true
   profiles: 
     active: local

@@ -3,10 +3,6 @@ server:
 spring:
   application:
     name: agregator-app
-  data:
-    elasticsearch:
-      repositories:
-        enabled: true
   profiles: 
     active: local
 opensearch:

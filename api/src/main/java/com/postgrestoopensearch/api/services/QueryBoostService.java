@@ -38,6 +38,6 @@ public class QueryBoostService {
     }
 
     public Optional<ResearchBoost> getById(int studentId) {
-        return researchBoostRepository.findById(studentId);
+        return researchBoostRepository.findByStudentId(studentId);
     }
 }

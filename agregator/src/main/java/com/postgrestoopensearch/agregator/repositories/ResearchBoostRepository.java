@@ -8,6 +8,7 @@ import com.postgrestoopensearch.agregator.domain.models.ResearchBoost;
 
 @Repository
 public interface ResearchBoostRepository  {
+    boolean createIndex();
     
     void deleteAll();
 

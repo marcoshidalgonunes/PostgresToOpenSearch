@@ -1,6 +1,6 @@
-#PostgreSQL to ElasticSearch
+# PostgreSQL to OpenSearch
 
-This project shows how to implement [Command Query Responsability Segregation (CQRS)](https://www.kurrent.io/cqrs-pattern) using PostgreSQL database to write commands and ElasticSearch for read queries.
+This project shows how to implement [Command Query Responsability Segregation (CQRS)](https://www.kurrent.io/cqrs-pattern) using PostgreSQL database to write commands and OpenSearch for read queries.
 
 ## Data
 
@@ -21,7 +21,7 @@ source data through Kafka
 * [PostgreSQL](https://www.postgresql.org/), pulled from [Debezium](https://debezium.io/), tailored for use with Connect, as Database for commands.
 * [ElasticSearch](https://www.elastic.co/elasticsearch), as database for queries.
 * [Java 21+](https://openjdk.java.net), to create the projects for applications used in this demo
-* [Spring](https://spring.io/), Java framework used in an agregator application to save Kafka Streams data into ElasticSearch and in an API application to query ElasticSearch data
+* [Spring](https://spring.io/), Java framework used in an agregator application to save Kafka Streams data into OpenSearch and in an API application to query OpenSearch data
 * [Apache Maven](https://maven.apache.org), to manage the Java projects for the applications used in this demo
 
 The containers are pulled directly from official Docker Hub images.
@@ -36,12 +36,12 @@ docker build -t debezium-connect -f debezium.Dockerfile .
 docker build -t debezium-postgres -f postgres.Dockerfile .
 ```
 
-### Create volumes for Postgres and ElasticSearch
+### Create volumes for Postgres and OpenSearch
 
 ```
 docker volume create postgresdata
 
-docker volume create elasticdata
+docker volume create opensearchdata
 ```
 
 ### Bring up the entire environment
@@ -132,27 +132,27 @@ kafka-console-consumer --bootstrap-server localhost:9092 --topic dbserver1.publi
 
 We can disconnect from Kafka container with the command `exit`.
 
-## Agregate topics into ElasticSearch
+## Agregate topics into OpenSearch
 
-Now we will persist the join of Students and Research tables in an ElasticSearch index. To do it , call the create endpoint of agregator application.
+Now we will persist the join of Students and Research tables in an OpenSearch index. To do it , call the create endpoint of agregator application.
 
 ```
 curl -X POST http://localhost:8081/agregator
 
 ```
 
-The endpoint return counters of topics readed and written in ElasticSearch. Since the write occurs only if the topic is not recorded, in subsequent runs the counters can differ.
+The endpoint return counters of topics readed and written in OpenSearch. Since the write occurs only if the topic is not recorded, in subsequent runs the counters can differ.
 
-If needed, you can delete the ElasticSearch index calling the following endpoint.
+If needed, you can delete the OpenSearch index calling the following endpoint.
 
 ```
 curl -X DELETE http://localhost:8081/agregator
 ```
 
 
-## Query data from ElasticSearch
+## Query data from OpenSearch
 
-The api application has endpoints to query ElasticSearch data populated with agregator application.
+The api application has endpoints to query OpenSearch data populated with agregator application.
 
 ### Query students chances to be enrolled in a research
 
