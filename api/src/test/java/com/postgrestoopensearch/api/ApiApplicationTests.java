@@ -1,4 +1,4 @@
-package com.postgrestoelasticsearch.api;
+package com.postgrestoopensearch.api;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
