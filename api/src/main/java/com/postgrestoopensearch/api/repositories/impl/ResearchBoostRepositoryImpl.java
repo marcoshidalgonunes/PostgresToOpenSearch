@@ -1,18 +1,13 @@
 package com.postgrestoopensearch.api.repositories.impl;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.opensearch.action.search.SearchRequest;
-import org.opensearch.action.search.SearchResponse;
-import org.opensearch.client.RequestOptions;
-import org.opensearch.client.RestHighLevelClient;
-import org.opensearch.index.query.QueryBuilders;
-import org.opensearch.search.SearchHit;
-import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -29,7 +24,7 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     private static final String INDEX_NAME = "boost";
 
     @Autowired
-    protected RestHighLevelClient client;
+    protected OpenSearchClient client;
 
     @Autowired
     protected ObjectMapper objectMapper;
@@ -37,43 +32,45 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     @Override
     public Optional<ResearchBoost> findByStudentId(int studentId) {
         try {
-            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
-            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.query(QueryBuilders.termQuery("studentId", studentId));
-            searchRequest.source(sourceBuilder);
+            Query query = Query.of(q -> q.term(t -> t.field("studentId").value(FieldValue.of(String.valueOf(studentId)))));
 
-            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            SearchHit[] searchHits = searchResponse.getHits().getHits();
-            if (searchHits.length > 0) {
-                ResearchBoost boost = objectMapper.readValue(searchHits[0].getSourceAsString(), ResearchBoost.class);
-                return Optional.of(boost);
+            var response = client.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(query)
+                    .size(1),
+                ResearchBoost.class
+            );
+            if (response.hits().hits() != null && !response.hits().hits().isEmpty()) {
+                return Optional.ofNullable(response.hits().hits().get(0).source());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error reading boost index ", e);
         }
         return Optional.empty();
     }
-
+    
     @Override
     public List<ResearchBoost> findByResearch(int research) {
         try {
-            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
-            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.query(QueryBuilders.matchQuery("research", research));
-            sourceBuilder.size(1000); // Set the size to a large number to fetch all items according to the criteria
-            searchRequest.source(sourceBuilder);
-
-            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            Query query = Query.of(q -> q.term(t -> t.field("research").value(FieldValue.of(String.valueOf(research)))));
+            var response = client.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(query)
+                    .size(1000),
+                ResearchBoost.class
+            );
 
             List<ResearchBoost> researchs = new ArrayList<>();
-            for (SearchHit hit : searchResponse.getHits().getHits()) {
-                researchs.add(objectMapper.readValue(hit.getSourceAsString(), ResearchBoost.class));
+            if (response.hits().hits() != null) {
+                response.hits().hits().forEach(hit -> {
+                    ResearchBoost boost = hit.source();
+                    if (boost != null) researchs.add(boost);
+                });
             }
-
             return researchs;
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error reading boost index ", e);
             return Collections.emptyList();
         }
-    }
+    }    
 }
