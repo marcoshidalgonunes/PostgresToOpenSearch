@@ -11,16 +11,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.postgrestoopensearch.api.interceptors.AwsSdkV2SigV4Interceptor;
-
 import jakarta.annotation.PreDestroy;
 
 import lombok.extern.slf4j.Slf4j;
-
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 
 @Slf4j
 @Configuration
@@ -32,27 +25,12 @@ public class OpenSearchClientConfig {
     @Value("${opensearch.scheme}")
     String scheme;
 
-    @Value("${aws.accessKeyId}")
-    String accessKeyId;
-
-    @Value("${aws.secretAccessKey}")
-    String secretAccessKey;
-
     private RestClient restClient;
 
     @Bean
     OpenSearchClient openSearchClient() {
-        AwsCredentialsProvider credentialsProvider = StaticCredentialsProvider.create(
-            AwsBasicCredentials.create(accessKeyId, secretAccessKey)
-        );
-        Region region = Region.of(System.getenv().getOrDefault("AWS_REGION", "us-east-1"));
-
-        AwsSdkV2SigV4Interceptor interceptor = new AwsSdkV2SigV4Interceptor(credentialsProvider, region, "es");
 
         restClient = RestClient.builder(HttpHost.create(scheme + "://" + host))
-            .setHttpClientConfigCallback(httpClientConfigBuilder ->
-                httpClientConfigBuilder.addInterceptorLast(interceptor)
-            )
             .build();
 
         RestClientTransport transport = new RestClientTransport(
