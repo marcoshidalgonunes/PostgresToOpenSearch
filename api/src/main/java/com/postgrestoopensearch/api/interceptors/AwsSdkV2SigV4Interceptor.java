@@ -1,4 +1,4 @@
-package com.postgrestoopensearch.interceptors;
+package com.postgrestoopensearch.api.interceptors;
 
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;

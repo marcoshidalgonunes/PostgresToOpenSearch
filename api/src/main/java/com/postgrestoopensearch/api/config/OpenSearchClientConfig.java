@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.postgrestoopensearch.api.interceptors.AwsSdkV2SigV4Interceptor;
+
 import jakarta.annotation.PreDestroy;
 
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +21,6 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
-
-import com.postgrestoopensearch.interceptors.AwsSdkV2SigV4Interceptor;
 
 @Slf4j
 @Configuration
