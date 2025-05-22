@@ -36,12 +36,13 @@ public class OpenSearchClientConfig {
 
             SdkHttpClient httpClient = ApacheHttpClient.builder().build();
 
-            client = new OpenSearchClient(new AwsSdk2Transport(
-                httpClient, 
-                host, 
-                "es",
-                region,
-                AwsSdk2TransportOptions.builder().build()
+            client = new OpenSearchClient(
+                new AwsSdk2Transport(
+                    httpClient, 
+                    host, 
+                    "es",
+                    region,
+                    AwsSdk2TransportOptions.builder().build()
             ));
 
         }
