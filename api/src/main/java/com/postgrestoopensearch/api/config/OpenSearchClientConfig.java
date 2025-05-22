@@ -2,9 +2,14 @@ package com.postgrestoopensearch.api.config;
 
 import java.io.IOException;
 
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.core5.http.HttpHost;
+
 import org.opensearch.client.opensearch.OpenSearchClient;
-import org.opensearch.client.transport.aws.AwsSdk2Transport;
-import org.opensearch.client.transport.aws.AwsSdk2TransportOptions;
+import org.opensearch.client.transport.OpenSearchTransport;
+import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,10 +18,6 @@ import jakarta.annotation.PreDestroy;
 
 import lombok.extern.slf4j.Slf4j;
 
-import software.amazon.awssdk.http.SdkHttpClient;
-import software.amazon.awssdk.http.apache.ApacheHttpClient;
-import software.amazon.awssdk.regions.Region;
-
 @Slf4j
 @Configuration
 public class OpenSearchClientConfig {
@@ -24,35 +25,34 @@ public class OpenSearchClientConfig {
     @Value("${opensearch.host}")
     String host;
 
+    @Value("${opensearch.port}")
+    int port;
+
     @Value("${opensearch.scheme}")
     String scheme;
 
-    private OpenSearchClient client;
-
     @Bean
-    OpenSearchClient openSearchClient() {
-        if (client == null) {
-            Region region = Region.of("us-east-1");
+    OpenSearchClient client() {
+        HttpHost httpHost = new HttpHost(scheme, host, port);
 
-            SdkHttpClient httpClient = ApacheHttpClient.builder().build();
+        ApacheHttpClient5TransportBuilder builder = ApacheHttpClient5TransportBuilder.builder(httpHost)
+            .setHttpClientConfigCallback(
+                httpClientBuilder -> {
+                    final PoolingAsyncClientConnectionManager connectionManager = PoolingAsyncClientConnectionManagerBuilder
+                        .create()
+                        .build();
 
-            client = new OpenSearchClient(
-                new AwsSdk2Transport(
-                    httpClient, 
-                    host, 
-                    "es",
-                    region,
-                    AwsSdk2TransportOptions.builder().build()
-            ));
+                    return httpClientBuilder
+                        .setConnectionManager(connectionManager);
+                }
+            );
 
-        }
-        return client;
+        OpenSearchTransport transport = builder.build();
+        return new OpenSearchClient(transport);
     }
 
     @PreDestroy
     public void closeClient() throws IOException {
-        if (client != null) {
-            client._transport().close();
-        }
+        client()._transport().close();
     }
 }

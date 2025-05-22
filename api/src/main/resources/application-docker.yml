@@ -1,3 +1,4 @@
 opensearch:
-  host: 'opensearch:9200'
+  host: 'opensearch'
+  port: 9200
   scheme: 'http'

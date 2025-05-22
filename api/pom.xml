@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.4.5</version>
+		<version>3.4.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.postgrestoelasticsearch.api</groupId>
@@ -37,21 +37,25 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-json</artifactId>
 			<version>3.4.3</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -60,41 +64,37 @@
 
 		<!-- OpenSearch Java API Client -->
 		<dependency>
-			<groupId>org.opensearch.client</groupId>
-			<artifactId>opensearch-java</artifactId>
-			<version>2.11.1</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.opensearch.client</groupId>
-					<artifactId>opensearch-rest-client</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.eclipse.parsson</groupId>
-					<artifactId>parsson</artifactId>
-				</exclusion>
-			</exclusions>
+			<groupId>org.opensearch</groupId>
+			<artifactId>opensearch</artifactId>
+			<version>3.0.0</version>
 		</dependency>
 
-		<!-- AWS SDK v2 for region/auth if you use AWS OpenSearch Service -->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <version>2.11.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-rest-client</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
 		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>auth</artifactId>
-			<version>2.27.21</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>regions</artifactId>
-			<version>2.27.21</version>
-		</dependency>
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>apache-client</artifactId>
-			<version>2.27.21</version>
+			<groupId>org.opensearch.client</groupId>
+			<artifactId>spring-data-opensearch</artifactId>
+			<version>1.5.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.github.luben</groupId>
+					<artifactId>zstd-jni</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>com.google.protobuf</groupId>
+					<artifactId>protobuf-java</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Test dependencies -->

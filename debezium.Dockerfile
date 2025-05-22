@@ -13,4 +13,4 @@ RUN mkdir $KAFKA_CONNECT_JDBC_DIR && cd $KAFKA_CONNECT_JDBC_DIR &&\
 	curl -sO http://packages.confluent.io/maven/io/confluent/kafka-connect-jdbc/5.1.2/kafka-connect-jdbc-10.8.0.jar
 
 # Deploy Debezium and Confluent Avro Converter
-COPY libs/*.jar /kafka/libs
+COPY libs/*.jar /kafka/libs/

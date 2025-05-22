@@ -1,24 +1,13 @@
 package com.postgrestoopensearch.agregator.repositories.impl;
 
-import java.io.IOException;
 import java.util.Optional;
 
-import org.opensearch.action.index.IndexRequest;
-import org.opensearch.action.search.SearchRequest;
-import org.opensearch.action.search.SearchResponse;
-import org.opensearch.client.RequestOptions;
-import org.opensearch.client.RestHighLevelClient;
-import org.opensearch.client.indices.CreateIndexRequest;
-import org.opensearch.client.indices.GetIndexRequest;
-import org.opensearch.common.xcontent.XContentType;
-import org.opensearch.index.query.QueryBuilders;
-import org.opensearch.index.reindex.DeleteByQueryRequest;
-import org.opensearch.search.SearchHit;
-import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.FieldValue;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.postgrestoopensearch.agregator.domain.models.ResearchBoost;
 import com.postgrestoopensearch.agregator.repositories.ResearchBoostRepository;
 
@@ -31,54 +20,54 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     private static final String INDEX_NAME = "boost";
 
     @Autowired
-    private RestHighLevelClient client;
-
-    @Autowired
-    private ObjectMapper objectMapper;    
+    private OpenSearchClient client;
 
     @Override
     public boolean createIndex() {
         try {
-            GetIndexRequest request = new GetIndexRequest(INDEX_NAME);
-            boolean exists = client.indices().exists(request, RequestOptions.DEFAULT);
+            // Check if index exists using OpenSearchClient
+            var existsResponse = client.indices().exists(b -> b.index(INDEX_NAME));
+            boolean exists = existsResponse.value();
             if (!exists) {
-                CreateIndexRequest createIndexRequest = new CreateIndexRequest(INDEX_NAME);
-                client.indices().create(createIndexRequest, RequestOptions.DEFAULT);
+                // Create index using OpenSearchClient
+                client.indices().create(b -> b.index(INDEX_NAME));
                 return true;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error creating index ", e);
         }
         return false;
     }
     
     @Override
-    public void deleteAll() {    
+    public void deleteAll() {
         try {
-            DeleteByQueryRequest request = new DeleteByQueryRequest(INDEX_NAME);
-            request.setQuery(QueryBuilders.matchAllQuery());
-            
-            client.deleteByQuery(request, RequestOptions.DEFAULT);
-        } catch (IOException e) {
+            // Use OpenSearchClient's deleteByQuery API
+            client.deleteByQuery(b -> b
+                .index(INDEX_NAME)
+                .query(q -> q.matchAll(m -> m))
+            );
+        } catch (Exception e) {
             log.error("Error deleting boost index ", e);
         }
-    }    
-
+    }
+    
     @Override
     public Optional<ResearchBoost> findById(int studentId) {
         try {
-            SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
-            SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-            sourceBuilder.query(QueryBuilders.termQuery("student_id", studentId));
-            searchRequest.source(sourceBuilder);
-
-            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            SearchHit[] searchHits = searchResponse.getHits().getHits();
-            if (searchHits.length > 0) {
-                ResearchBoost boost = objectMapper.readValue(searchHits[0].getSourceAsString(), ResearchBoost.class);
-                return Optional.of(boost);
+            // Use OpenSearchClient's search API
+            var response = client.search(s -> s
+                    .index(INDEX_NAME)
+                    .query(q -> q.term(t -> t.field("student_id").value(FieldValue.of(studentId))))
+                    .size(1),
+                ResearchBoost.class
+            );
+            var hits = response.hits().hits();
+            if (hits != null && !hits.isEmpty()) {
+                ResearchBoost boost = hits.get(0).source();
+                return Optional.ofNullable(boost);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error reading boost index ", e);
         }
         return Optional.empty();
@@ -87,12 +76,14 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     @Override
     public void save(ResearchBoost researchBoost) {
         try {
-            IndexRequest indexRequest = new IndexRequest(INDEX_NAME)
-                .source(objectMapper.writeValueAsString(researchBoost), XContentType.JSON);
-            client.index(indexRequest, RequestOptions.DEFAULT);
+            // Use OpenSearchClient's index API
+            client.index(i -> i
+                .index(INDEX_NAME)
+                .id(String.valueOf(researchBoost.getStudentId()))
+                .document(researchBoost)
+            );
         } catch (Exception e) {
             log.error("Error saving boost index ", e);
         }
-        
     }
 }

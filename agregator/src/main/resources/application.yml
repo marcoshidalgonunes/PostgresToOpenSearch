@@ -5,6 +5,3 @@ spring:
     name: agregator-app
   profiles: 
     active: local
-opensearch:
-  host: 'localhost:9200'
-  scheme: 'http'
