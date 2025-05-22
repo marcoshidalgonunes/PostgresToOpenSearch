@@ -78,22 +78,28 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
+		<!-- <dependency>
 			<groupId>org.opensearch.client</groupId>
 			<artifactId>opensearch-rest-client</artifactId>
 			<version>2.11.1</version>
-		</dependency>
+		</dependency> -->
 
 		<!-- AWS SDK v2 for region/auth if you use AWS OpenSearch Service -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>auth</artifactId>
-			<version>2.25.62</version>
+			<version>2.27.21</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>regions</artifactId>
-			<version>2.25.62</version>
+			<version>2.27.21</version>
+		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>apache-client</artifactId>
+			<version>2.27.21</version>
 		</dependency>
 
 		<!-- Test dependencies -->
