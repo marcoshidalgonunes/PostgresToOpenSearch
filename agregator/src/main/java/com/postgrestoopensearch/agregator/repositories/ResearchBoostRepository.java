@@ -10,7 +10,7 @@ import com.postgrestoopensearch.agregator.domain.models.ResearchBoost;
 public interface ResearchBoostRepository  {
     boolean createIndex();
     
-    void deleteAll();
+    void deleteIndex();
 
     Optional<ResearchBoost> findById(int studentId);
     

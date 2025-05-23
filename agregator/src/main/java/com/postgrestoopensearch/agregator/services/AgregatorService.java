@@ -41,7 +41,7 @@ public class AgregatorService {
     }
 
     public void delete() {
-        researchBoostRepository.deleteAll();
+        researchBoostRepository.deleteIndex();
     }
 }
 

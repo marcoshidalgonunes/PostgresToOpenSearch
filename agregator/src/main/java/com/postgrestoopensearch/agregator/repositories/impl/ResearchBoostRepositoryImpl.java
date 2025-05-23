@@ -24,11 +24,11 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
 
     @Override
     public boolean createIndex() {
+
         try {
             // Check if index exists using OpenSearchClient
             var existsResponse = client.indices().exists(b -> b.index(INDEX_NAME));
-            boolean exists = existsResponse.value();
-            if (!exists) {
+            if (!existsResponse.value()) {
                 // Create index using OpenSearchClient
                 client.indices().create(b -> b.index(INDEX_NAME));
                 return true;
@@ -36,17 +36,15 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
         } catch (Exception e) {
             log.error("Error creating index ", e);
         }
+        
         return false;
     }
     
     @Override
-    public void deleteAll() {
+    public void deleteIndex() {
         try {
             // Use OpenSearchClient's deleteByQuery API
-            client.deleteByQuery(b -> b
-                .index(INDEX_NAME)
-                .query(q -> q.matchAll(m -> m))
-            );
+            client.indices().delete(b -> b.index(INDEX_NAME));
         } catch (Exception e) {
             log.error("Error deleting boost index ", e);
         }
