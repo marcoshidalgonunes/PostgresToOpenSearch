@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch._types.FieldValue;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,12 +35,12 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
         try {
             Query query = Query.of(q -> q.term(t -> t.field("studentId").value(FieldValue.of(String.valueOf(studentId)))));
 
-            var response = client.search(s -> s
+            var searchRequest = new SearchRequest.Builder()
                     .index(INDEX_NAME)
                     .query(query)
-                    .size(1),
-                ResearchBoost.class
-            );
+                    .size(1)
+                    .build();
+            var response = client.search(searchRequest, ResearchBoost.class);
             if (response.hits().hits() != null && !response.hits().hits().isEmpty()) {
                 return Optional.ofNullable(response.hits().hits().get(0).source());
             }
@@ -53,12 +54,13 @@ public class ResearchBoostRepositoryImpl implements ResearchBoostRepository {
     public List<ResearchBoost> findByResearch(int research) {
         try {
             Query query = Query.of(q -> q.term(t -> t.field("research").value(FieldValue.of(String.valueOf(research)))));
-            var response = client.search(s -> s
+
+            var searchRequest = new SearchRequest.Builder()
                     .index(INDEX_NAME)
                     .query(query)
-                    .size(1000),
-                ResearchBoost.class
-            );
+                    .size(1000)
+                    .build();
+            var response = client.search(searchRequest, ResearchBoost.class);
 
             List<ResearchBoost> researchs = new ArrayList<>();
             if (response.hits().hits() != null) {
